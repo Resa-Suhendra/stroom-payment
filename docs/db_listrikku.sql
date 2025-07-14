@@ -167,13 +167,6 @@ CREATE TABLE `tagihan` (
 
 
 CREATE INDEX `id_pelanggan` ON `penggunaan` (`id_pelanggan`);
-
-
-CREATE VIEW `view_tarif` AS
-SELECT `tarif`.`id_tarif`, `tarif`.`daya`, `tarif`.`tarif_perkwh`
-FROM `tarif`;
-
-select * from view_tarif;
 --
 -- Dumping data untuk tabel `tagihan`
 --
@@ -265,8 +258,6 @@ ALTER TABLE `pelanggan`
 
 SELECT * FROM user WHERE id_level = 'LVL002';
 
-select * from view_tarif;
-
 --
 -- Indeks untuk tabel `pembayaran`
 --
@@ -299,83 +290,6 @@ ALTER TABLE `user`
 COMMIT;
 
 DELIMITER //
-
-CREATE PROCEDURE tambah_pembayaran (
-	IN p_id_pembayaran VARCHAR(128),
-	IN p_id_tagihan VARCHAR(128),
-	IN p_id_pelanggan VARCHAR(128),
-	IN p_tgl_bayar DATE,
-	IN p_biaya_admin INT,
-	IN p_total_bayar INT,
-	IN p_id_user VARCHAR(128)
-)
-BEGIN
-INSERT INTO pembayaran (
-	id_pembayaran, id_tagihan, id_pelanggan,
-	tgl_bayar, biaya_admin, total_bayar, id_user
-)
-VALUES (
-		   p_id_pembayaran, p_id_tagihan, p_id_pelanggan,
-		   p_tgl_bayar, p_biaya_admin, p_total_bayar, p_id_user
-	   );
-END //
-
-DELIMITER ;
-
-CALL tambah_pembayaran(
-    'PAY230213002', -- id_pembayaran
-    'TG2302100005', -- id_tagihan
-    'PLG2302040001', -- id_pelanggan
-    '2023-02-13', -- tgl_bayar
-    2500, -- biaya_admin
-    102500, -- total_bayar
-    'USR0001' -- id_user
-);
-
-select * from pembayaran where id_pembayaran = 'PAY230213001';
-
-DELIMITER //
-
-CREATE FUNCTION total_pembayaran_per_tanggal(p_tanggal DATE)
-	RETURNS INT
-	DETERMINISTIC
-BEGIN
-    DECLARE total INT;
-
-SELECT SUM(total_bayar)
-INTO total
-FROM pembayaran
-WHERE tgl_bayar = p_tanggal;
-
-RETURN IFNULL(total, 0);
-END //
-
-DELIMITER ;
-
-
-SELECT total_pembayaran_per_tanggal('2023-02-10');
-
-CREATE TABLE log_pembayaran (
-								id_log INT AUTO_INCREMENT PRIMARY KEY,
-								id_pembayaran VARCHAR(128),
-								waktu_log TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-DELIMITER //
-
-CREATE TRIGGER after_pembayaran_insert
-	AFTER INSERT ON pembayaran
-	FOR EACH ROW
-BEGIN
-	INSERT INTO log_pembayaran (id_pembayaran)
-	VALUES (NEW.id_pembayaran);
-END //
-
-DELIMITER ;
-
-select * from log_pembayaran;
-
-
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
